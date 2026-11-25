@@ -258,7 +258,7 @@ function viewLogin(){
  <label for="cod">Código da chefia</label><input class="field" id="cod" type="password" inputmode="numeric" autocomplete="current-password" enterkeyhint="go" placeholder="••••••">
  <label class="chk"><input type="checkbox" id="lem" ${C.lembrar?'checked':''}> Lembrar neste telemóvel</label>
  <button class="btn red" id="lb">Entrar</button><p class="note" id="lmsg" role="alert" style="margin:0"></p></form>
- <p class="note">O código está no script da Google Sheet (CODIGO_CHEFIA).</p></div>`;
+</div>`;
  $('#lf').onsubmit=async e=>{e.preventDefault();const code=$('#cod').value.trim();if(!code)return;const b=$('#lb');b.disabled=true;b.textContent='A entrar…';
   try{await api({action:'login',codigo:code});C.codigo=code;C.lembrar=$('#lem').checked;persist();go('hoje');load()}
   catch(x){$('#lmsg').textContent=x.message;$('#lmsg').style.color='var(--r)';$('#cod').value='';if(!matchMedia('(prefers-reduced-motion: reduce)').matches)$('#cod').animate([{transform:'translateX(0)'},{transform:'translateX(-8px)'},{transform:'translateX(7px)'},{transform:'translateX(-4px)'},{transform:'translateX(0)'}],{duration:320,easing:'ease-out'})}
