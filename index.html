@@ -110,12 +110,8 @@ h3.t{margin:0 0 6px;font-size:18px;font-weight:700}
 .cycbtn:active{transform:scale(.98)}
 .cycbtn .t{font-size:13px;font-weight:600;color:var(--mut);display:flex;justify-content:space-between}
 .cycbtn .t span{color:var(--red)}
-.kb{position:fixed;left:0;right:0;top:0;z-index:40;display:none;align-items:center;gap:2px;padding:4px 8px;background:light-dark(rgba(246,246,248,.97),rgba(36,36,38,.97));-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 -.5px 0 var(--line)}
-.kb.on{display:flex}
-.kb button{border:0;background:none;color:var(--red);font-weight:600;font-size:17px;min-width:44px;min-height:40px;padding:0 10px;cursor:pointer;border-radius:10px}
-.kb button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.kb button[disabled]{opacity:.35}
-.kb .ok{margin-left:auto;font-weight:700;background:var(--red);color:#fff;min-width:64px}
+.kbopen .sbody{padding-bottom:60vh}
+.kbopen main{padding-bottom:60vh}
 .tabs{position:fixed;bottom:0;left:0;right:0;z-index:6;background:light-dark(rgba(249,249,249,.8),rgba(22,22,24,.8));-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);box-shadow:0 -.5px 0 var(--line);padding:4px 8px calc(4px + env(safe-area-inset-bottom,0px))}
 .tabs .in{max-width:360px;margin:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 .tab{border:0;background:none;display:grid;justify-items:center;gap:1px;font-size:11px;font-weight:600;color:var(--mut);min-height:50px;cursor:pointer;padding:5px 0 2px;transition:transform 160ms var(--ease-out)}
@@ -158,7 +154,6 @@ h3.t{margin:0 0 6px;font-size:18px;font-weight:700}
 <div class="scrim" id="scrim"></div>
 <section class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shT" hidden></section>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div class="kb" id="kb" role="toolbar" aria-label="Teclado"><button type="button" id="kbP" aria-label="Campo anterior"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button><button type="button" id="kbN" aria-label="Campo seguinte"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button><button type="button" class="ok" id="kbOk">OK</button></div>
 <script src="config.js"></script>
 <script>
 {
@@ -341,25 +336,22 @@ function dragSheet(h){
 function twoTap(el,armedTxt,done){const txt=el.textContent;let t=0;el.onclick=()=>{if(!el.classList.contains('armed')){el.classList.add('armed');el.textContent=armedTxt;t=setTimeout(()=>{el.classList.remove('armed');el.textContent=txt},4000);return}clearTimeout(t);done()}}
 scrim.onclick=()=>closeSheet();
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!sheet.hidden)closeSheet()});
-/* teclado do iPhone: a folha fica por cima do teclado, o campo ativo fica sempre à vista e há uma barra com ‹ › e OK */
-const vv=window.visualViewport,kb=$('#kb'),COARSE=matchMedia('(pointer: coarse)').matches;
+/* teclado do iPhone: a folha fica por cima do teclado e o campo tocado sobe para o terço de cima, para o seguinte ficar logo à vista */
+const vv=window.visualViewport,COARSE=matchMedia('(pointer: coarse)').matches;
 const isField=el=>el&&el.matches&&el.matches('input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=time]),textarea');
-const fieldList=()=>[...(sheet.hidden?app:sheet).querySelectorAll('input:not([type=checkbox]):not([type=radio]):not([type=date]):not([type=time]),textarea')].filter(e=>e.offsetParent);
 function fit(){
- const h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0,kbOpen=COARSE&&isField(document.activeElement);
- kb.classList.toggle('on',kbOpen);const kh=kbOpen?kb.offsetHeight:0;
- if(kbOpen){kb.style.top=(top+h-kh)+'px';const L=fieldList(),i=L.indexOf(document.activeElement);$('#kbP').disabled=i<=0;$('#kbN').disabled=i<0||i>=L.length-1}
- document.documentElement.style.setProperty('--vvh',(h-kh)+'px');
- sheet.style.bottom=Math.max(0,innerHeight-h-top+kh)+'px'}
-function reveal(el){if(!el||!el.isConnected)return;const box=el.closest('.sbody');const h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0,kh=kb.classList.contains('on')?kb.offsetHeight:0;const r=el.getBoundingClientRect();
- if(box){const b=box.getBoundingClientRect(),lo=Math.min(b.bottom,top+h-kh)-16,hi=b.top+8;if(r.bottom>lo)box.scrollTop+=r.bottom-lo;else if(r.top<hi)box.scrollTop-=hi-r.top}
- else{const lo=top+h-kh-24;if(r.bottom>lo||r.top<top+80)window.scrollBy(0,r.top-(top+h/3))}}
-document.addEventListener('focusin',e=>{if(!isField(e.target))return;fit();setTimeout(()=>{fit();reveal(e.target)},320)});
-document.addEventListener('focusout',()=>setTimeout(fit,60));
-if(vv){vv.addEventListener('resize',()=>{fit();if(isField(document.activeElement))reveal(document.activeElement)});vv.addEventListener('scroll',fit)}
-kb.addEventListener('pointerdown',e=>e.preventDefault());
-const step=d=>{const L=fieldList(),i=L.indexOf(document.activeElement);const n=L[i+d];if(n){n.focus({preventScroll:true});reveal(n)}};
-$('#kbP').onclick=()=>step(-1);$('#kbN').onclick=()=>step(1);$('#kbOk').onclick=()=>{document.activeElement&&document.activeElement.blur();fit()};
+ const h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0,open=COARSE&&isField(document.activeElement);
+ document.documentElement.classList.toggle('kbopen',open);
+ document.documentElement.style.setProperty('--vvh',h+'px');
+ sheet.style.bottom=Math.max(0,innerHeight-h-top)+'px'}
+function reveal(el){if(!el||!el.isConnected||document.activeElement!==el)return;const h=vv?vv.height:innerHeight,top=vv?vv.offsetTop:0,r=el.getBoundingClientRect(),box=el.closest('.sbody');
+ if(box){const b=box.getBoundingClientRect(),vt=b.top,vb=Math.min(b.bottom,top+h);box.scrollTo({top:box.scrollTop+r.top-(vt+(vb-vt)*.2),behavior:'smooth'})}
+ else window.scrollTo({top:window.scrollY+r.top-(top+h*.22),behavior:'smooth'})}
+document.addEventListener('focusin',e=>{if(!isField(e.target))return;fit();[280,650].forEach(t=>setTimeout(()=>{fit();reveal(e.target)},t))});
+document.addEventListener('focusout',()=>setTimeout(fit,80));
+if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}
+/* tocar fora de um campo fecha o teclado */
+document.addEventListener('pointerdown',e=>{const a=document.activeElement;if(isField(a)&&!e.target.closest('input,textarea,select,label,button'))a.blur()});
 fit();
 
 /* ---------- navegação ---------- */
